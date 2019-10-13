@@ -1,14 +1,7 @@
 var jasmineReporters = require('jasmine-reporters');
 var testCategoriesSetup = require('../src/test-categories').testCategoriesSetup;
 
-testCategoriesSetup({
-    environments: {
-        local: ['commit'],
-        systest: ['acceptance'],
-        live: ['smoke']
-    },
-    grepFlag: '@@@'
-});
+
 
 //protractor ... --params.environment=local
 
@@ -30,6 +23,15 @@ exports.config = {
     },
     framework: 'jasmine2',
     onPrepare: function() {
+        testCategoriesSetup({
+            environments: {
+                local: ['commit'],
+                systest: ['acceptance'],
+                live: ['smoke']
+            },
+            currentEnvironment: browser.params.environment,
+            grepFlag: '@@@'
+        });
         jasmine.getEnv().addReporter(new jasmineReporters.TerminalReporter({
             verbosity: 3,
             color: true,
