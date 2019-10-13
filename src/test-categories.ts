@@ -16,8 +16,22 @@ let config: testCategoriesConfig = {
 };
 
 function _validateConfig() {
-    let rb: string;
-    Object.getOwnPropertyNames(config).forEach(propertyName => config[propertyName] === null ? rb = propertyName : null);
+    let rb: {propertyName: string, errorType: string};
+    let types = {
+        environments: "object",
+        currentEnvironment: "string",
+        grepFlag: "string"
+    };
+    Object.getOwnPropertyNames(config).forEach(
+        propertyName => {
+            let type = typeof config[propertyName];
+            if (type !== types[propertyName]) {
+                rb.propertyName = propertyName;
+                rb.errorType = type;
+            }
+        }
+    );
+
     if (typeof rb != "undefined") {
         console.error(`!!!!!!!! Error in test-categories config. ${rb} is null !!!!!!!!!`);
         return false;

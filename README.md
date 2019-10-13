@@ -18,13 +18,13 @@ Add category configuration to your tests. Here we add it at the top of our Protr
 ```javascript
 var testCategoriesSetup = require('test-categories').testCategoriesSetup;
 
-//Then your standard Protractor configuration
 exports.config = {
     capabilities: {
         browserName: 'chrome'
     },
     specs: ['*.spec.js'],
     onPrepare: function() {
+        //In Protractor we can run `testCategoriesSetup` in the onPrepare
         testCategoriesSetup({
             environments: {
                     local: ['commit'],
