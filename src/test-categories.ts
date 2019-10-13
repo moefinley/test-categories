@@ -40,9 +40,9 @@ function _validateConfig() {
     }
 }
 
-function _checkTestTypesFromTestNameAreValid(testTypesFromTestName, testName) {
+function _checkCategoriesFromTestNameAreValid(categoriesFromTestName, testName) {
     //Check all the test types are valid to help avoid typos preventing tests running
-    testTypesFromTestName.forEach(type => {
+    categoriesFromTestName.forEach(type => {
         let hasValidTypeNames: boolean = false;
         Object.getOwnPropertyNames(config.environments).forEach(function (environmentName) {
             config.environments[environmentName].forEach(
@@ -69,9 +69,9 @@ function _parseCategories(originalName: TemplateStringsArray): { name: string; c
 function _getMatchingCategories(categories) {
     let matchingTypes: string[] = [];
     config.environments[config.currentEnvironment].forEach(
-        environmentTestType => {
+        environmentCategory => {
             matchingTypes = matchingTypes.concat(categories.filter(
-                testType => testType === environmentTestType
+                category => category === environmentCategory
             ));
         }
     );
@@ -87,7 +87,7 @@ export function testName(originalTestName: TemplateStringsArray) {
 
     if (_validateConfig()) {
         ({name, categories} = _parseCategories(originalTestName));
-        _checkTestTypesFromTestNameAreValid(categories, name);
+        _checkCategoriesFromTestNameAreValid(categories, name);
 
         if (_getMatchingCategories(categories).length >= 1) {
             name = config.grepFlag + name;
