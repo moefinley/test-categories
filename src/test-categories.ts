@@ -12,6 +12,12 @@ let config: testCategoriesConfig = {
     currentEnvironment: null
 };
 
+enum testTypes {
+    setup,
+    fixture,
+    test
+}
+
 function _validateConfig() {
     let rb: { propertyName: string, errorType: string };
     let types = {
@@ -47,25 +53,37 @@ function _matchCategories<T>(categories: T[]) {
 }
 
 export function testFixture<T>(fixtureName: string, categories: T[]) {
-    function _runTestsDefinedInDescribe(constructor: Function) {
-        Object.getOwnPropertyNames(constructor.prototype).forEach(testMethod => {
-            if (testMethod != "name" && testMethod != "constructor")
-                constructor.prototype[testMethod]();
+    function _runSetupDefinedInDescribe(testFixtureInstance: any) {
+        Object.getOwnPropertyNames(testFixtureInstance.prototype).forEach(testMethod => {
+            if (testFixtureInstance[testMethod].___testType === testTypes.setup && typeof testFixtureInstance[testMethod] === "function")
+                testFixtureInstance[testMethod].apply(testFixtureInstance);
         });
     }
 
-    return function (constructor: Function) {
-        constructor.prototype.name = fixtureName;
+    function _runTestsDefinedInDescribe(testFixtureInstance: Function) {
+        Object.getOwnPropertyNames(testFixtureInstance.prototype).forEach(testMethod => {
+            if (testFixtureInstance[testMethod].___testType === testTypes.test && typeof testFixtureInstance[testMethod] === "function")
+                testFixtureInstance[testMethod].apply(testFixtureInstance);
+        });
+    }
+
+    return function (target: any) {
+
+        let testFixtureInstance = new target();
+        testFixtureInstance.prototype = target.prototype;
+        testFixtureInstance.name = fixtureName;
         if (!_validateConfig()) return;
 
         let matchedCategories = _matchCategories(categories);
         if (matchedCategories.length > 0) {
-            describe(fixtureName, () => {
-                _runTestsDefinedInDescribe.call(this,constructor);
+            describe(fixtureName, function () {
+                _runSetupDefinedInDescribe.call(testFixtureInstance, testFixtureInstance);
+                _runTestsDefinedInDescribe.call(testFixtureInstance, testFixtureInstance);
             });
         } else {
-            xdescribe(fixtureName, () => {
-                _runTestsDefinedInDescribe.call(this,constructor);
+            xdescribe(fixtureName, function() {
+                _runSetupDefinedInDescribe.call(testFixtureInstance, testFixtureInstance);
+                _runTestsDefinedInDescribe.call(testFixtureInstance, testFixtureInstance);
             });
         }
     }
@@ -76,14 +94,22 @@ export function test<T>(testName: string, categories?: T[]) {
         let originalTestFunction = descriptor.value;
         if (_validateConfig()) {
             if (typeof categories == "undefined" || _matchCategories(categories).length > 0) {
-                descriptor.value = () => {
+                descriptor.value = function() {
+                    //TODO: Make the scope correct
                     it(testName, originalTestFunction);
-                }
+                };
+                descriptor.value.___testType = testTypes.test;
             } else {
-                descriptor.value = () => {
+                descriptor.value = function() {
                     xit(testName, originalTestFunction);
-                }
+                };
+                descriptor.value.___testType = testTypes.test;
             }
         }
     }
+}
+
+
+export function setup(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    descriptor.value.___testType = testTypes.setup;
 }
