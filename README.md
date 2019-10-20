@@ -72,7 +72,7 @@ class exampleTestFixtureOne {
 
 Finally we run our tests. In this example we use Protractor passing in the environment as a param.
 ```shell script
-protractor myconfig.js --grep @@@ --params.environment=local
+protractor myconfig.js --params.environment=local
 ```
 
 ### Prerequisites
