@@ -17,7 +17,7 @@ Start by configuring all the environments you have, adding the categories you wa
 
 ## Getting Started
 
-###Step 1
+### Step 1
 Add the environment and category configuration to your tests. 
 
 Here we add it at the top of our Protractor configuration but you can add the same to a single test spec file or
@@ -47,7 +47,7 @@ exports.config = {
 };
 ```
 
-###Step 2
+### Step 2
 Then we define our tests as methods in a class and attach the `@testFixture` or `@test` decorator.
 ```javascript
 @testFixture('some tests marked with various categories', [exampleTestCategories.commit])
