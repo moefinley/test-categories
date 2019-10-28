@@ -1,11 +1,11 @@
 {
   "name": "test-categories",
-  "version": "0.3.0",
+  "version": "0.2.0",
   "description": "",
   "main": "src/test-categories.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "example-tests": "node ./node_modules/protractor/bin/protractor example-tests/run-commit-tests.config.js --params.environment=local"
+    "example-tests": "node ./node_modules/protractor/bin/protractor example-tests/run-commit-tests.config.js --grep @@@ --params.environment=local"
   },
   "repository": {
     "type": "git",

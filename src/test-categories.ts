@@ -1,22 +1,26 @@
+//  e.g. live: ['smoke', 'commit']
 type environments = {
-    [key: string]: any[];
+    [key: string]: string[];
 }
 
 type testCategoriesConfig = {
     environments: environments,
-    currentEnvironment: string
+    currentEnvironment: string,
+    grepFlag: string
 }
 
 let config: testCategoriesConfig = {
     environments: null,
-    currentEnvironment: null
+    currentEnvironment: null,
+    grepFlag: null
 };
 
 function _validateConfig() {
-    let rb: { propertyName: string, errorType: string };
+    let rb: {propertyName: string, errorType: string};
     let types = {
         environments: "object",
-        currentEnvironment: "string"
+        currentEnvironment: "string",
+        grepFlag: "string"
     };
     Object.getOwnPropertyNames(config).forEach(
         propertyName => {
@@ -36,54 +40,61 @@ function _validateConfig() {
     }
 }
 
+function _checkCategoriesFromTestNameAreValid(categoriesFromTestName, testName) {
+    //Check all the test types are valid to help avoid typos preventing tests running
+    categoriesFromTestName.forEach(type => {
+        let hasValidTypeNames: boolean = false;
+        Object.getOwnPropertyNames(config.environments).forEach(function (environmentName) {
+            config.environments[environmentName].forEach(
+                typeName => typeName === type ? hasValidTypeNames = true : null
+            );
+        });
+        if (!hasValidTypeNames) {
+            console.error(`Unknown test category "${type}" discovered in test "${testName.trim()}". This could be a typo in the test name or in the test-categories config.`);
+        }
+    });
+}
+
+function _parseCategories(originalName: TemplateStringsArray): { name: string; categories: string[] } {
+    const regxResults: string[] = /\[(.*)](.*)/.exec(originalName[0]);
+    let categoriesFromTestName = regxResults[1].split(',');
+    categoriesFromTestName.forEach((testType, index) => categoriesFromTestName[index] = testType.trim());
+    let name = regxResults[2];
+    return {
+        name: name,
+        categories: categoriesFromTestName
+    }
+}
+
+function _getMatchingCategories(categories) {
+    let matchingTypes: string[] = [];
+    config.environments[config.currentEnvironment].forEach(
+        environmentCategory => {
+            matchingTypes = matchingTypes.concat(categories.filter(
+                category => category === environmentCategory
+            ));
+        }
+    );
+    return matchingTypes;
+}
 
 export function testCategoriesSetup(_config: testCategoriesConfig) {
     Object.assign(config, _config);
 }
 
-function _matchCategories<T>(categories: T[]) {
-    let configCategories = config.environments[config.currentEnvironment];
-    return categories.filter(category => configCategories.includes(category));
-}
+export function testName(originalTestName: TemplateStringsArray) {
+    let name: string, categories: string[];
 
-export function testFixture<T>(fixtureName: string, categories: T[]) {
-    function _runTestsDefinedInDescribe(constructor: Function) {
-        Object.getOwnPropertyNames(constructor.prototype).forEach(testMethod => {
-            if (testMethod != "name" && testMethod != "constructor")
-                constructor.prototype[testMethod]();
-        });
-    }
+    if (_validateConfig()) {
+        ({name, categories} = _parseCategories(originalTestName));
+        _checkCategoriesFromTestNameAreValid(categories, name);
 
-    return function (constructor: Function) {
-        constructor.prototype.name = fixtureName;
-        if (!_validateConfig()) return;
-
-        let matchedCategories = _matchCategories(categories);
-        if (matchedCategories.length > 0) {
-            describe(fixtureName, () => {
-                _runTestsDefinedInDescribe.call(this,constructor);
-            });
-        } else {
-            xdescribe(fixtureName, () => {
-                _runTestsDefinedInDescribe.call(this,constructor);
-            });
+        if (_getMatchingCategories(categories).length >= 1) {
+            name = config.grepFlag + name;
         }
+    } else {
+        name = 'ERROR PARSING CATEGORIES:' + originalTestName;
     }
-}
 
-export function test<T>(testName: string, categories?: T[]) {
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        let originalTestFunction = descriptor.value;
-        if (_validateConfig()) {
-            if (typeof categories == "undefined" || _matchCategories(categories).length > 0) {
-                descriptor.value = () => {
-                    it(testName, originalTestFunction);
-                }
-            } else {
-                descriptor.value = () => {
-                    xit(testName, originalTestFunction);
-                }
-            }
-        }
-    }
+    return name;
 }
