@@ -16,7 +16,7 @@ let config: testCategoriesConfig = {
 };
 
 function _validateConfig() {
-    let configValueWithError: {propertyName: string, errorType: string};
+    let errorMessage = null;
     let types = {
         environments: "object",
         currentEnvironment: "string",
@@ -27,22 +27,21 @@ function _validateConfig() {
             let type = typeof config[propertyName];
 
             if (type !== types[propertyName]) {
-                configValueWithError = {
-                    propertyName: propertyName,
-                    errorType: type
-                };
+                errorMessage = `!!!!!!!! Error in test-categories config. ${propertyName} is null !!!!!!!!!`;
             }
             if(type === "string" && config[propertyName].lenght < 1){
-                configValueWithError = {
-                    propertyName: propertyName,
-                    errorType: type
-                };
+                errorMessage = `!!!!!!!! Error in test-categories config. ${propertyName} is empty string`
             }
+
         }
     );
 
-    if (typeof configValueWithError != "undefined") {
-        console.error(`!!!!!!!! Error in test-categories config. ${configValueWithError.propertyName} is null !!!!!!!!!`);
+    if(!config.environments.hasOwnProperty(config.currentEnvironment)) {
+        errorMessage = `Current environment "${config.currentEnvironment}" doesn't match any environments`
+    }
+
+    if (errorMessage !== null) {
+        console.error(errorMessage);
         return false;
     } else {
         return true;
