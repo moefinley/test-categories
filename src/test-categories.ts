@@ -86,12 +86,19 @@ function _getMatchingCategories(categories) {
     return matchingTypes;
 }
 
+export var enabled = false;
+
 export function testCategoriesSetup(_config: testCategoriesConfig) {
+    enabled = true;
     Object.assign(config, _config);
 }
 
 export function testName(originalTestName: TemplateStringsArray) {
     let name: string, categories: string[];
+
+    // If testCategoriesSetup has not been run or if `enabled` has manually been set to false just return
+    // the original name
+    if(!enabled) return originalTestName[0];
 
     if (_validateConfig()) {
         ({name, categories} = _parseCategories(originalTestName));
